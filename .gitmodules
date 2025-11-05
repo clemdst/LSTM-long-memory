@@ -1,0 +1,6 @@
+[submodule "RNN_long_memory"]
+	path = RNN_long_memory
+	url = https://github.com/alecgt/RNN_long_memory.git
+[submodule "mRNN-mLSTM"]
+	path = mRNN-mLSTM
+	url = https://github.com/Gladys-Zhao/mRNN-mLSTM.git
