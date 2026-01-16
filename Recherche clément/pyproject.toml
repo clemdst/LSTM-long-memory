@@ -3,7 +3,6 @@ name = "lstms"
 version = "0.1.0"
 description = "Packages for studying LTSMs and long-term memory series"
 authors = ["clemdst <clement.destouesse@ensae.fr>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
