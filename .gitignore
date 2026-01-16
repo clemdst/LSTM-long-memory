@@ -6,6 +6,8 @@ __pycache__/
 *.pth
 *.lock
 *.toml
+Recherche clément/
+*.png
 
 # C extensions
 *.so
