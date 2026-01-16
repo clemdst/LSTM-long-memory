@@ -1,26 +1,53 @@
-# LSTM-long-memory: Enhancing RNNs with Long Memory Properties
+# Enhancing LSTMs with Long Memory Properties
 
-Repository for the advanced ML class for 3rd year at ENSAE
+Repository for the Advanced Machine Learning class (3rd year) at ENSAE.
 
 ## Overview
 
-This project investigates the limitations of Long Short-Term Memory (LSTM) networks in capturing long-range dependencies in time series data and proposes enhanced architectures to improve their long memory properties. We demonstrate this using ocean level data, a time series with known cyclicity and long-term dependencies.
+This project investigates the limitations of Long Short-Term Memory (LSTM) networks in capturing long-range dependencies in time series data. We evaluate enhanced architectures (mLSTM/MRNN) to improve their long memory properties, demonstrated through the analysis of ocean surface measurements—a time series characterized by strong cyclicity and long-term dependencies.
 
 ---
 
-## Principal Notebooks
+## Project Structure
 
-### 1. **LSTM_short_memory.ipynb**
+```text
+.
+├── data/
+│   └── ocean_level_data.csv      # Ocean level time series dataset
+├── mRNNmLSTM/
+│   ├── models.py                # Implementation of mLSTM and MRNN architectures
+│   └── train.py                 # Training pipeline for the models
+├── notebooks/
+│   ├── climate_data_analysis.ipynb # Dataset validation and long memory testing
+│   ├── lstm_memory_analysis.ipynb  # Empirical evidence of traditional LSTM limitations
+│   ├── lstm_mlstm_analysis.ipynb   # mLSTM/MRNN implementation and performance evaluation
+│   └── music_data_analysis.ipynb   # Statistical testing of long memory in music series
+├── scripts/
+│   ├── _arfima.py               # Utilities for ARFIMA processes
+│   ├── _varfima.py              # Utilities for VARFIMA processes
+│   ├── d_test.py                # Statistical testing scripts
+│   ├── layers.py                # Custom layer implementations
+│   └── utils.py                 # General utility functions
+├── ts2vec/
+│   ├── dilated_conv.py          # Dilated convolutions for feature extraction
+│   └── encoder.py               # Temporal encoder architecture
+├── .gitignore                   # Files and folders ignored by Git
+├── .gitmodules                  # Git submodule configuration
+├── LICENSE                      # Project license
+└── README.md                    # Project documentation
+
+## Main notebooks
+
+### 1. **lstm_memory_analysis.ipynb**
 Based on Greaves-Tunnell & Harchaoui's methodology, this notebook provides empirical evidence that traditional LSTM architectures struggle to capture long-range temporal dependencies.
-
 
 ### 2. **climate_data_analysis.ipynb**
 **Purpose:** Comprehensive analysis and validation of the ocean level dataset.
 
-### 3. **LSTM_updated.ipynb**
+### 3. **lstm_mlstm_analysis.ipynb**
 Presentation of **mLSTM/MRNN** (Memory-Enhanced LSTM/RNN) techniques and their performance to capture long-memory
 
-### 4. **music2.ipynb**
+### 4. **music_data_analysis.ipynb**
 Advanced statistical testing of long memory properties in music series.
 
 
@@ -29,37 +56,7 @@ Advanced statistical testing of long memory properties in music series.
 ## Data
 
 ### ocean_level_data.csv
-A real-world time series representing ocean level measurements 
----
-
-## Project Structure
-
-```
-.
-├── LSTM_short_memory.ipynb          # Baseline LSTM memory analysis
-├── climate_data_analysis.ipynb       # Dataset validation and long memory testing
-├── LSTM_updated.ipynb                # mLSTM/MRNN implementation and evaluation
-├── music2.ipynb                      # Time and frequency-domain long memory testing
-├── ocean_level_data.csv              # Ocean level time series dataset
-├── layers.py                         # Custom layer implementations
-├── utils.py                          # Utility functions
-├── models.py                         # Model architectures
-├── train.py                          # Training pipeline
-└── time_series_prediction/           # Supporting module for time series tasks
-```
-
----
-
-## Key Concepts
-
-### Long Memory in Time Series
-Long memory refers to the ability of a model to capture and utilize information from distant past events. Ocean level data exhibits strong long memory properties due to climate and oceanic patterns.
-
-### LSTM Limitations
-Despite their theoretical advantages, standard LSTMs have limitations in capturing very long-range dependencies, leading to performance degradation on series with strong long memory properties.
-
-### mLSTM/MRNN Solution
-Enhanced RNN architectures that incorporate mechanisms to improve the flow and retention of long-term dependencies, providing better performance on long memory time series.
+A real-world time series representing ocean level measurements. Downloaded from https://nsidc.org/data. 
 
 ---
 
@@ -68,8 +65,8 @@ Enhanced RNN architectures that incorporate mechanisms to improve the flow and r
 - Python 3.8+
 - PyTorch
 - NumPy, Pandas, SciPy
-- Matplotlib, Seaborn (for visualization)
-- Statsmodels (for time series analysis)
+- Matplotlib
+- Statsmodel
 
 Install dependencies using:
 ```bash
@@ -78,29 +75,11 @@ pip install torch numpy pandas scipy matplotlib seaborn statsmodels
 
 ---
 
-## Usage
-
-1. **Start with Data Analysis:**
-   - Run `climate_data_analysis.ipynb` to understand the dataset and confirm long memory properties
-
-2. **Understand the Baseline:**
-   - Execute `LSTM_short_memory.ipynb` to see LSTM limitations
-
-3. **Explore Improvements:**
-   - Work through `LSTM_updated.ipynb` to see the mLSTM/MRNN methodology and results
-
-4. **Advanced Statistical Validation:**
-   - Use `music2.ipynb` for formal testing of long memory properties
-
----
-
 ## References
 
-- Greaves-Tunnell, A., & Harchaoui, Z. (2019). [Long Memory Estimation in Nonstationary Stochastic Processes](https://arxiv.org/abs/1708.00695)
-- Ocean level data sources: [Cite your data source]
+- Greaves-Tunnell, A., & Harchaoui, Z. (2019). A statistical investigation of long memory in language and music.
 
+- Zhao & al. (2020). Do RNN and LSTM have long memory?. In International
+Conference on Machine Learning 
 ---
 
-## Authors
-
-Advanced ML Project - ENSAE 3rd Year
