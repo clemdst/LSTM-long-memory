@@ -8,7 +8,7 @@ This project investigates the limitations of Long Short-Term Memory (LSTM) netwo
 
 ---
 
-## Project Structure
+## Project structure
 
 ```text
 .
@@ -35,6 +35,8 @@ This project investigates the limitations of Long Short-Term Memory (LSTM) netwo
 ├── .gitmodules                  # Git submodule configuration
 ├── LICENSE                      # Project license
 └── README.md                    # Project documentation
+```
+
 
 ## Main notebooks
 
