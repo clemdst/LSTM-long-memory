@@ -17,15 +17,6 @@ Based on Greaves-Tunnell & Harchaoui's methodology, this notebook provides empir
 ### 2. **climate_data_analysis.ipynb**
 **Purpose:** Comprehensive analysis and validation of the ocean level dataset.
 
-**Contents:**
-- **Data Quality Assessment:** Statistical properties, missing values, outliers
-- **Long Memory Testing:** Analysis of long-range dependencies using:
-  - Autocorrelation Function (ACF) and Partial Autocorrelation Function (PACF)
-  - ARFIMA (AutoRegressive Fractionally Integrated Moving Average) tests
-  - Hurst exponent calculation
-- **Cyclicity Analysis:** Seasonal patterns and periodic behavior identification
-- **Dataset Selection Justification:** Why ocean level data is suitable for testing long memory properties
-
 ### 3. **LSTM_updated.ipynb**
 Presentation of **mLSTM/MRNN** (Memory-Enhanced LSTM/RNN) techniques and their performance to capture long-memory
 
