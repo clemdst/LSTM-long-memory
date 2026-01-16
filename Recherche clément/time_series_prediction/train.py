@@ -147,6 +147,13 @@ def train_model(dataset,
 
         torch.manual_seed(seed)
         
+        # Detect device (CUDA if available, otherwise CPU)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if verbose and i == start:
+            print(f'Using device: {device}')
+            if device.type == 'cuda':
+                print(f'GPU: {torch.cuda.get_device_name(0)}')
+        
         # initialize model
         if algorithm == 'RNN':
             model = models.RNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
@@ -168,6 +175,9 @@ def train_model(dataset,
                                k=K, num_layers=num_layers, embedding_dim=embedding_dim)
         else:
             raise ValueError(f'Unknown algorithm: {algorithm}')
+        
+        # Move model to device
+        model = model.to(device)
             
         criterion = nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -183,8 +193,8 @@ def train_model(dataset,
         def train():
             model.train()
             optimizer.zero_grad()
-            target = torch.from_numpy(train_y).float()
-            output, hx = model(torch.from_numpy(train_x).float())
+            target = torch.from_numpy(train_y).float().to(device)
+            output, hx = model(torch.from_numpy(train_x).float().to(device))
             
             loss = criterion(output, target)
             loss.backward()
@@ -194,8 +204,8 @@ def train_model(dataset,
             model.eval()
             with torch.no_grad():
                 # Ne pas réutiliser hx de l'entraînement !
-                val_y, _ = model(torch.from_numpy(validate_x).float())
-                target_val = torch.from_numpy(validate_y).float()
+                val_y, _ = model(torch.from_numpy(validate_x).float().to(device))
+                target_val = torch.from_numpy(validate_y).float().to(device)
                 val_loss = criterion(val_y, target_val)
             
             model.train()  # Remettre en mode train
@@ -203,29 +213,42 @@ def train_model(dataset,
             # Détacher les valeurs pour éviter l'accumulation de graphes
             return loss.item(), val_loss.item()
 
+        def detach_hidden_state(hx):
+            """Helper function to detach hidden states for all model types"""
+            if hx is None:
+                return None
+            elif isinstance(hx, tuple):
+                # Check if tuple contains lists (mLSTM/mRNN) or tensors (LSTM)
+                if len(hx) > 0 and isinstance(hx[0], list):
+                    # mLSTM/mRNN: tuple of lists
+                    return tuple([[h.detach() if h is not None else None for h in hidden_list] for hidden_list in hx])
+                else:
+                    # Regular LSTM: tuple of tensors
+                    return tuple(h.detach() if h is not None else None for h in hx)
+            elif isinstance(hx, list):
+                # mRNN: list of hidden states
+                return [h.detach() if h is not None else None for h in hx]
+            else:
+                # RNN: single tensor
+                return hx.detach()
+        
         def compute_test(best_model):
             model = best_model
             model.eval()
             with torch.no_grad():
-                train_predict, hx = model(to_torch(train_x))
-                train_predict = train_predict.detach().numpy()
+                train_predict, hx = model(to_torch(train_x).to(device))
+                train_predict = train_predict.cpu().detach().numpy()
                 
-                # IMPORTANT: Détacher le hidden state pour éviter les problèmes de dimensions
-                if isinstance(hx, tuple):  # LSTM returns (h, c)
-                    hx = tuple(h.detach() for h in hx)
-                else:  # RNN returns h
-                    hx = hx.detach()
+                # Detach hidden state for all model types
+                hx = detach_hidden_state(hx)
                 
-                val_predict, hx = model(to_torch(validate_x), hx)
+                val_predict, hx = model(to_torch(validate_x).to(device), hx)
                 
-                # Détacher à nouveau pour le test
-                if isinstance(hx, tuple):
-                    hx = tuple(h.detach() for h in hx)
-                else:
-                    hx = hx.detach()
+                # Detach hidden state again for test
+                hx = detach_hidden_state(hx)
                 
-                test_predict, _ = model(to_torch(test_x), hx)
-                test_predict = test_predict.detach().numpy()
+                test_predict, _ = model(to_torch(test_x).to(device), hx)
+                test_predict = test_predict.cpu().detach().numpy()
             
             # invert predictions
             test_predict_r = scaler.inverse_transform(test_predict[:, 0, :])
@@ -315,9 +338,10 @@ def extract_hidden_states(model, dataset, scaler):
     
     with torch.no_grad():
         hidden_state = None
+        device = next(model.parameters()).device
         
         for t in range(len(X)):
-            input_t = torch.from_numpy(X[t:t+1]).float()
+            input_t = torch.from_numpy(X[t:t+1]).float().to(device)
             
             # Forward pass
             output, hidden_state = model(input_t, hidden_state)
@@ -330,11 +354,11 @@ def extract_hidden_states(model, dataset, scaler):
             
             # Get the hidden state (handle different shapes)
             if len(h.shape) == 3:  # (num_layers, batch, hidden_size)
-                last_layer_hidden = h[-1, 0, :].numpy()
+                last_layer_hidden = h[-1, 0, :].cpu().numpy()
             elif len(h.shape) == 2:  # (batch, hidden_size)
-                last_layer_hidden = h[0, :].numpy()
+                last_layer_hidden = h[0, :].cpu().numpy()
             else:  # (hidden_size,)
-                last_layer_hidden = h.numpy()
+                last_layer_hidden = h.cpu().numpy()
             
             hidden_states_list.append(last_layer_hidden)
     
