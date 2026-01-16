@@ -16,6 +16,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from utils import create_dataset, to_torch
 import time_series_prediction.models as models
 
+import importlib
+importlib.reload(models)
+
 
 def train_model(dataset, 
                 algorithm='MLSTMFixD',
@@ -25,6 +28,8 @@ def train_model(dataset,
                 input_size=1,
                 output_size=1,
                 K=100,
+                num_layers=1,
+                embedding_dim=None,
                 patience=100,
                 train_size=2000,
                 validate_size=1200,
@@ -52,6 +57,10 @@ def train_model(dataset,
         Number of output features (default 1 for time series)
     K : int
         Truncate infinite summation at lag K (for memory models)
+    num_layers : int
+        Number of hidden layers (default 1)
+    embedding_dim : int or None
+        If not None, add embedding layer to project input to this dimension
     patience : int
         Early stopping patience
     train_size : int
@@ -89,10 +98,29 @@ def train_model(dataset,
             y = dataset
         else:
             y = np.array(dataset)
-            
-        dataset_arr = y.reshape(-1, 1)
         
-        # normalize the dataset
+        # Handle different input shapes
+        if len(y.shape) == 1:
+            # Univariate time series: (T,) -> (T, 1)
+            dataset_arr = y.reshape(-1, 1)
+        elif len(y.shape) == 2:
+            # Check if it's (T, features) or (features, T)
+            if y.shape[0] < y.shape[1]:  # Likely (features, T) - transpose it
+                dataset_arr = y.T
+                if verbose:
+                    print(f"Transposed input from {y.shape} to {dataset_arr.shape}")
+            else:  # Already (T, features)
+                dataset_arr = y
+        else:
+            raise ValueError(f"Unexpected dataset shape: {y.shape}")
+        
+        # Detect actual input dimension from data
+        actual_input_size = dataset_arr.shape[1]
+        if actual_input_size != input_size and verbose:
+            print(f"Warning: input_size={input_size} but data has {actual_input_size} features. Using {actual_input_size}.")
+            input_size = actual_input_size
+            
+        # normalize the dataset (normalize each feature independently)
         scaler = MinMaxScaler(feature_range=(0, 1))
         dataset_arr = scaler.fit_transform(dataset_arr)
         
@@ -104,29 +132,40 @@ def train_model(dataset,
         validate_x, validate_y = X[train_size:train_size + validate_size], Y[train_size:train_size + validate_size]
         test_x, test_y = X[train_size + validate_size:len(Y)], Y[train_size + validate_size:len(Y)]
 
-        # reshape input to be [time steps,samples,features]
-        train_x = np.reshape(train_x, (train_x.shape[0], batch_size, input_size))
-        validate_x = np.reshape(validate_x, (validate_x.shape[0], batch_size, input_size))
-        test_x = np.reshape(test_x, (test_x.shape[0], batch_size, input_size))
-        train_y = np.reshape(train_y, (train_y.shape[0], batch_size, output_size))
-        validate_y = np.reshape(validate_y, (validate_y.shape[0], batch_size, output_size))
-        test_y = np.reshape(test_y, (test_y.shape[0], batch_size, output_size))
+        # reshape input to be [time steps, samples, features]
+        # X and Y now have shape (T, feature_dim) after create_dataset
+        train_x = train_x.reshape(train_x.shape[0], batch_size, -1)
+        validate_x = validate_x.reshape(validate_x.shape[0], batch_size, -1)
+        test_x = test_x.reshape(test_x.shape[0], batch_size, -1)
+        train_y = train_y.reshape(train_y.shape[0], batch_size, -1)
+        validate_y = validate_y.reshape(validate_y.shape[0], batch_size, -1)
+        test_y = test_y.reshape(test_y.shape[0], batch_size, -1)
+        
+        # Update input_size and output_size based on actual data shape
+        input_size = train_x.shape[2]
+        output_size = train_y.shape[2]
 
         torch.manual_seed(seed)
         
         # initialize model
         if algorithm == 'RNN':
-            model = models.RNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size)
+            model = models.RNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
+                             num_layers=num_layers, embedding_dim=embedding_dim)
         elif algorithm == 'LSTM':
-            model = models.LSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size)
+            model = models.LSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
+                              num_layers=num_layers, embedding_dim=embedding_dim)
         elif algorithm == 'MRNNFixD':
-            model = models.MRNNFixD(input_size=input_size, hidden_size=hidden_size, output_size=output_size, k=K)
+            model = models.MRNNFixD(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
+                                  k=K, num_layers=num_layers, embedding_dim=embedding_dim)
         elif algorithm == 'MRNN':
-            model = models.MRNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, k=K)
+            model = models.MRNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
+                              k=K, num_layers=num_layers, embedding_dim=embedding_dim)
         elif algorithm == 'MLSTMFixD':
-            model = models.MLSTMFixD(input_size=input_size, hidden_size=hidden_size, output_size=output_size, k=K)
+            model = models.MLSTMFixD(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
+                                   k=K, num_layers=num_layers, embedding_dim=embedding_dim)
         elif algorithm == 'MLSTM':
-            model = models.MLSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size, k=K)
+            model = models.MLSTM(input_size=input_size, hidden_size=hidden_size, output_size=output_size, 
+                               k=K, num_layers=num_layers, embedding_dim=embedding_dim)
         else:
             raise ValueError(f'Unknown algorithm: {algorithm}')
             
